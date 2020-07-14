@@ -255,7 +255,6 @@ class Zappa:
         """
         Instantiate this new Zappa instance, loading any custom credentials if necessary.
         """
-
         # Set aws_region to None to use the system's region instead
         if aws_region is None:
             # https://github.com/Miserlou/Zappa/issues/413
@@ -1558,7 +1557,16 @@ class Zappa:
         if self.apigateway_policy:
             restapi.Policy = json.loads(self.apigateway_policy)
         self.cf_template.add_resource(restapi)
-
+        self.cf_template.add_output([
+            troposphere.Output(
+                "RoleArn",
+                Description="RoleArn",
+                Value="{}".format(self.credentials_arn))])
+        self.cf_template.add_output([
+            troposphere.Output(
+                "ApiGatewayId",
+                Description="ApiGatewayId",
+                Value=troposphere.Ref(restapi))])
         root_id = troposphere.GetAtt(restapi, 'RootResourceId')
         invocation_prefix = "aws" if self.boto_session.region_name != "us-gov-west-1" else "aws-us-gov"
         invocations_uri = 'arn:' + invocation_prefix + ':apigateway:' + self.boto_session.region_name + ':lambda:path/2015-03-31/functions/' + lambda_arn + '/invocations'
